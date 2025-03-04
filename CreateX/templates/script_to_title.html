@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Script Title Generator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #8B5CF6;
+            --primary-dark: #7C3AED;
+            --primary-light: #A78BFA;
+            --white: #FFFFFF;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 95%;
+            background: var(--white);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        .description {
+            text-align: center;
+            color: #666;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .input-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            font-size: 1rem;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: var(--gray-100);
+            color: #333;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .generate-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .generate-btn:active {
+            transform: translateY(0);
+        }
+
+        .result-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--gray-100);
+            border-radius: 12px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-title {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .generated-title {
+            padding: 1rem;
+            background: var(--white);
+            border-radius: 8px;
+            font-size: 1.2rem;
+            color: #333;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .loading i {
+            color: var(--primary-color);
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            textarea {
+                min-height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <i class="fas fa-magic"></i>
+            AI Script Title Generator
+        </h1>
+        <p class="description">Enter your script below, and AI will generate a suitable title for it.</p>
+
+        <div class="input-container">
+            <textarea
+                id="scriptInput"
+                placeholder="Enter your script here..."
+                rows="5"
+            ></textarea>
+        </div>
+
+        <button class="generate-btn" onclick="stfTitle()">
+            <i class="fas fa-wand-sparkles"></i>
+            Generate Title
+        </button>
+
+        <div class="loading">
+            <i class="fas fa-spinner"></i>
+        </div>
+
+        <div class="result-section" id="resultSection">
+            <h2 class="result-title">
+                <i class="fas fa-check-circle"></i>
+                Suggested Title
+            </h2>
+            <p id="generatedTitle" class="generated-title"></p>
+        </div>
+    </div>
+
+    <script>
+        async function stfTitle() {
+            const scriptInput = document.getElementById('scriptInput');
+            const loading = document.querySelector('.loading');
+            const resultSection = document.getElementById('resultSection');
+            const generateBtn = document.querySelector('.generate-btn');
+
+            const script = scriptInput.value.trim();
+            if (!script) {
+                alert('Please enter a script');
+                return;
+            }
+
+            // Show loading, disable button
+            loading.style.display = 'block';
+            generateBtn.disabled = true;
+            generateBtn.style.opacity = '0.7';
+            resultSection.classList.remove('show');
+
+            try {
+                const response = await fetch('/stf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ script })
+                });
+
+                const data = await response.json();
+
+                if (data.title) {
+                    document.getElementById('generatedTitle').textContent = data.title;
+                    resultSection.classList.add('show');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error);
+            } finally {
+                // Hide loading, enable button
+                loading.style.display = 'none';
+                generateBtn.disabled = false;
+                generateBtn.style.opacity = '1';
+            }
+        }
+    </script>
+</body>
+</html>

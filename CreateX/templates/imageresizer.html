@@ -1,0 +1,316 @@
+<!-- templates/imageresizer.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Resizer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #8B5CF6;
+            --primary-light: #A78BFA;
+            --primary-dark: #7C3AED;
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+            width: 100%;
+            max-width: 900px;
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        .title {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .upload-area {
+            border: 3px dashed var(--primary-light);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background: #f8f9fa;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .platform-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .platform-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+        }
+
+        .resize-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto;
+            transition: all 0.3s ease;
+            transform: scale(1);
+        }
+
+        .resize-btn:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+
+        .resize-btn:active {
+            transform: scale(0.95);
+        }
+
+        .preview-container {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading i {
+            color: var(--primary-color);
+            font-size: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .download-btn {
+            background: #10B981;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            display: none;
+            margin: 20px auto;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: #059669;
+            transform: scale(1.05);
+        }
+
+        .error-message {
+            color: #EF4444;
+            text-align: center;
+            margin: 10px 0;
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            .title {
+                font-size: 2em;
+            }
+
+            .upload-area {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">✨ Image Resizer</h1>
+
+        <div class="upload-area" onclick="document.getElementById('imageInput').click()">
+            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+            <p>Click or drag to upload an image</p>
+            <input type="file" id="imageInput" hidden accept="image/*">
+        </div>
+
+        <select class="platform-select" id="platformSelect">
+            <option value="">Select Platform</option>
+            <option value="YouTube Thumbnail">YouTube Thumbnail (1280x720)</option>
+            <option value="Instagram Post">Instagram Post (1080x1080)</option>
+            <option value="Instagram Story">Instagram Story (1080x1920)</option>
+            <option value="Facebook Post">Facebook Post (1200x630)</option>
+            <option value="Twitter Post">Twitter Post (1024x512)</option>
+        </select>
+
+        <button onclick="resizeImage()" class="resize-btn">
+            <i class="fas fa-magic"></i> Resize Image
+        </button>
+
+        <div class="loading" id="loadingSpinner">
+            <i class="fas fa-spinner"></i>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="preview-container" id="previewContainer">
+            <img id="previewImage" class="preview-image">
+            <button onclick="downloadImage()" class="download-btn" id="downloadBtn">
+                <i class="fas fa-download"></i> Download
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let resizedImageData = null;
+
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewImage').src = e.target.result;
+                    document.getElementById('previewContainer').style.display = 'block';
+                    document.getElementById('downloadBtn').style.display = 'none';
+                }
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        function resizeImage() {
+            const imageInput = document.getElementById('imageInput');
+            const platform = document.getElementById('platformSelect').value;
+            const errorMessage = document.getElementById('errorMessage');
+            const spinner = document.getElementById('loadingSpinner');
+
+            if (!imageInput.files[0]) {
+                errorMessage.textContent = 'Please select an image first';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            if (!platform) {
+                errorMessage.textContent = 'Please select a platform';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            errorMessage.style.display = 'none';
+            spinner.style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+            formData.append('platform', platform);
+
+            fetch('/resize', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                spinner.style.display = 'none';
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                document.getElementById('previewImage').src = data.preview;
+                document.getElementById('previewContainer').style.display = 'block';
+                document.getElementById('downloadBtn').style.display = 'block';
+                resizedImageData = data.preview;
+            })
+            .catch(error => {
+                spinner.style.display = 'none';
+                errorMessage.textContent = error.message;
+                errorMessage.style.display = 'block';
+            });
+        }
+
+        function downloadImage() {
+            if (!resizedImageData) return;
+
+            const platform = document.getElementById('platformSelect').value;
+
+            fetch('/download', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    image: resizedImageData,
+                    platform: platform
+                })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `resized_${platform.replace(' ', '_')}.png`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            })
+            .catch(error => {
+                console.error('Download error:', error);
+                alert('Error downloading image');
+            });
+        }
+    </script>
+</body>
+</html>

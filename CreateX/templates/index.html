@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grammar Checker</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css">
+    <style>
+        /* Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #6a0dad, #9b30ff);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            color: #333;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .header i {
+            font-size: 2rem;
+            color: #6a0dad;
+            margin-right: 10px;
+        }
+
+        .title {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        /* Input Box */
+        .input-area {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 2px solid #6a0dad;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-area:focus {
+            box-shadow: 0 0 10px rgba(106, 13, 173, 0.6);
+            border-color: #9b30ff;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s ease-in-out;
+        }
+
+        .check-button {
+            background-color: #6a0dad;
+            color: white;
+        }
+
+        .check-button:hover {
+            background-color: #9b30ff;
+            box-shadow: 0 5px 15px rgba(106, 13, 173, 0.5);
+        }
+
+        .clear-button {
+            background-color: #ffffff;
+            color: #6a0dad;
+            border: 2px solid #6a0dad;
+        }
+
+        .clear-button:hover {
+            background-color: #6a0dad;
+            color: white;
+        }
+
+        /* Result Box */
+        .result-area {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            background: #f3e5f5;
+            color: #333;
+            text-align: left;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .corrections {
+            margin-top: 15px;
+        }
+
+        .correction-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .arrow {
+            color: #6a0dad;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <i class='bx bx-edit-alt'></i>
+            <h1 class="title">Grammar Checker</h1>
+        </div>
+
+        <!-- Text Input -->
+        <textarea id="textInput" class="input-area" placeholder="Type or paste your text here..."></textarea>
+
+        <!-- Buttons -->
+        <div class="button-group">
+            <button onclick="checkGrammar()" class="button check-button">Check Grammar</button>
+            <button onclick="clearText()" class="button clear-button">Clear</button>
+        </div>
+
+        <!-- Results -->
+        <div id="resultArea" class="result-area">
+            <h3>Corrected Text:</h3>
+            <p id="correctedText"></p>
+            <div id="corrections" class="corrections"></div>
+        </div>
+    </div>
+
+    <script>
+        function checkGrammar() {
+            const text = document.getElementById('textInput').value;
+            if (!text) {
+                alert('Please enter some text');
+                return;
+            }
+
+            fetch('/check_grammar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: text })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultArea = document.getElementById('resultArea');
+                const correctedText = document.getElementById('correctedText');
+                const corrections = document.getElementById('corrections');
+
+                resultArea.style.display = 'block';
+                correctedText.textContent = data.corrected_text;
+
+                corrections.innerHTML = '';
+                if (data.corrected_words.length > 0) {
+                    data.corrected_words.forEach(([original, corrected]) => {
+                        const item = document.createElement('div');
+                        item.className = 'correction-item';
+                        item.innerHTML = `
+                            <span>${original}</span>
+                            <span class="arrow">→</span>
+                            <span>${corrected}</span>
+                        `;
+                        corrections.appendChild(item);
+                    });
+                } else {
+                    corrections.innerHTML = 'No grammatical errors detected.';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while checking grammar');
+            });
+        }
+
+        function clearText() {
+            document.getElementById('textInput').value = '';
+            document.getElementById('resultArea').style.display = 'none';
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video to Audio Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%); }
+        .hover-scale { transition: transform 0.2s; }
+        .hover-scale:hover { transform: scale(1.02); }
+        .custom-loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #8B5CF6;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .shake { animation: shake 0.5s; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-violet-50 to-white min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-violet-800 mb-4">
+                <i class="fas fa-music mr-2"></i>Video to Audio Converter
+            </h1>
+            <p class="text-violet-600 text-lg">Extract high-quality audio from your videos</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-8 hover-scale">
+            <div class="mb-8 text-center">
+                <div id="dropZone" class="border-3 border-dashed border-violet-300 rounded-lg p-8 cursor-pointer">
+                    <i class="fas fa-cloud-upload-alt text-5xl text-violet-500 mb-4"></i>
+                    <p class="text-violet-800 text-lg mb-2">Drag and drop your video here</p>
+                    <p class="text-violet-600 text-sm">or</p>
+                    <button onclick="document.getElementById('videoFile').click()" class="mt-4 bg-violet-600 text-white px-6 py-2 rounded-full hover:bg-violet-700">
+                        Browse Files
+                    </button>
+                    <input type="file" id="videoFile" accept="video/*" class="hidden" onchange="handleFileSelect(this)">
+                </div>
+            </div>
+
+            <div id="previewSection" class="hidden mb-8">
+                <h3 class="text-violet-800 font-semibold mb-4">Preview</h3>
+                <video id="videoPreview" controls class="w-full rounded-lg shadow-md"></video>
+            </div>
+
+            <div class="mb-8">
+                <h3 class="text-violet-800 font-semibold mb-4">Select Output Format</h3>
+                <div class="flex justify-center gap-4">
+                    <label class="format-option cursor-pointer">
+                        <input type="radio" name="format" value="mp3" checked class="hidden">
+                        <div class="px-6 py-3 rounded-full border-2 border-violet-500 text-violet-700">
+                            <i class="fas fa-music mr-2"></i>MP3
+                        </div>
+                    </label>
+                    <label class="format-option cursor-pointer">
+                        <input type="radio" name="format" value="wav" class="hidden">
+                        <div class="px-6 py-3 rounded-full border-2 border-violet-500 text-violet-700">
+                            <i class="fas fa-wave-square mr-2"></i>WAV
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button id="convertBtn" onclick="convertVideo()" class="gradient-bg text-white px-8 py-3 rounded-full text-lg font-semibold hover:opacity-90" disabled>
+                    <i class="fas fa-cog mr-2"></i>Convert to Audio
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        function handleFileSelect(input) {
+            const file = input.files[0];
+            if (file) {
+                selectedFile = file;
+                document.getElementById('convertBtn').disabled = false;
+                document.getElementById('videoPreview').src = URL.createObjectURL(file);
+                document.getElementById('previewSection').classList.remove('hidden');
+            }
+        }
+
+        async function convertVideo() {
+            if (!selectedFile) return;
+            const formData = new FormData();
+            formData.append('video', selectedFile);
+            formData.append('format', document.querySelector('input[name="format"]:checked').value);
+            const response = await fetch('/vta', { method: 'POST', body: formData });
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `converted_audio.${formData.get('format')}`;
+                a.click();
+            } else {
+                alert('Conversion failed');
+            }
+        }
+    </script>
+</body>
+</html>

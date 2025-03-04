@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Summarizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background-color: #ddd;
+        }
+
+        .output {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>YouTube Summarizer</h1>
+        <p>Paste the YouTube video URL below and click "Summarize" to get a concise summary of the transcript.</p>
+        <input type="text" id="videoUrl" placeholder="Enter YouTube video URL">
+        <button id="summarizeBtn">Summarize</button>
+        <div id="output" class="output"></div>
+    </div>
+
+    <script>
+        document.getElementById("summarizeBtn").addEventListener("click", function() {
+            const summarizeButton = document.getElementById("summarizeBtn");
+            const output = document.getElementById("output");
+            const videoUrl = document.getElementById("videoUrl").value.trim();
+
+            // Disable the button and show summarizing message
+            summarizeButton.disabled = true;
+            summarizeButton.innerText = "Summarizing...";
+
+            // Check if the URL is not empty
+            if (!videoUrl) {
+                output.innerText = "Please enter a valid YouTube video URL.";
+                summarizeButton.disabled = false;
+                summarizeButton.innerText = "Summarize";
+                return;
+            }
+
+            // Make API request to the Flask backend
+            const apiUrl = `http://localhost:5000/summarize?video_url=${encodeURIComponent(videoUrl)}`;
+
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.summary) {
+                        output.innerText = data.summary;
+                    } else {
+                        output.innerText = "Error: " + data.error;
+                    }
+                })
+                .catch(error => {
+                    output.innerText = "Error: Unable to summarize the video.";
+                })
+                .finally(() => {
+                    // Re-enable the button after summarizing
+                    summarizeButton.disabled = false;
+                    summarizeButton.innerText = "Summarize";
+                });
+        });
+    </script>
+</body>
+</html>

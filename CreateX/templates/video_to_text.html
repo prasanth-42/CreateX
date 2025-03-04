@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Transcriber</title>
+    <style>
+        :root {
+            --violet: #8A2BE2;
+            --light-violet: #9F3FF2;
+            --white: #FFFFFF;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--white);
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            color: var(--violet);
+            margin-bottom: 2rem;
+        }
+
+        .upload-container {
+            background-color: #f8f9fa;
+            border: 2px dashed var(--violet);
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .upload-container.dragging {
+            background-color: #e9ecef;
+            border-color: var(--light-violet);
+        }
+
+        .upload-button {
+            background-color: var(--violet);
+            color: white;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        .upload-button:hover {
+            background-color: var(--light-violet);
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--violet);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .status {
+            text-align: center;
+            color: #666;
+        }
+
+        .result-container {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .result-text {
+            width: 100%;
+            min-height: 200px;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: white;
+            margin-top: 1rem;
+        }
+
+        .error {
+            color: #dc3545;
+            text-align: center;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Video Transcriber</h1>
+        </div>
+
+        <div class="upload-container" id="dropZone">
+            <p>Drag and drop your video file here or</p>
+            <input type="file" id="fileInput" accept=".mp4,.avi,.mov,.mkv" style="display: none;">
+            <button class="upload-button" onclick="document.getElementById('fileInput').click()">
+                Choose File
+            </button>
+            <p id="fileStatus"></p>
+        </div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+            <div class="status" id="status">Ready to transcribe...</div>
+        </div>
+
+        <div class="result-container" id="resultContainer">
+            <h2>Transcription Result:</h2>
+            <div class="result-text" id="resultText"></div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileStatus = document.getElementById('fileStatus');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const status = document.getElementById('status');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultText = document.getElementById('resultText');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragging');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragging');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragging');
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('video/')) {
+                    uploadFile(file);
+                } else {
+                    fileStatus.textContent = 'Please select a video file.';
+                }
+            }
+        }
+
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('video', file);
+
+            fileStatus.textContent = 'Uploading...';
+            progressContainer.style.display = 'block';
+            resultContainer.style.display = 'none';
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    pollStatus(data.task_id);
+                } else {
+                    throw new Error(data.error || 'Upload failed');
+                }
+            } catch (error) {
+                fileStatus.textContent = `Error: ${error.message}`;
+                progressContainer.style.display = 'none';
+            }
+        }
+
+        async function pollStatus(taskId) {
+            try {
+                const response = await fetch(`/status/${taskId}`);
+                const data = await response.json();
+
+                progressBar.style.width = `${data.progress}%`;
+                status.textContent = data.status;
+
+                if (data.error) {
+                    throw new Error(data.status);
+                }
+
+                if (data.progress < 100) {
+                    setTimeout(() => pollStatus(taskId), 1000);
+                } else {
+                    fileStatus.textContent = 'Transcription complete!';
+                    resultContainer.style.display = 'block';
+                    resultText.textContent = data.text;
+                }
+            } catch (error) {
+                fileStatus.textContent = `Error: ${error.message}`;
+                progressContainer.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

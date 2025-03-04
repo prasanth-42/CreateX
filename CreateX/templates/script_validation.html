@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Script Validation Tool</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #8B5CF6;
+            --primary-dark: #7C3AED;
+            --primary-light: #A78BFA;
+            --success-color: #10B981;
+            --error-color: #EF4444;
+            --warning-color: #F59E0B;
+            --white: #FFFFFF;
+            --gray-100: #F3F4F6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 95%;
+            background: var(--white);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .description {
+            text-align: center;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 1rem;
+            border: 2px solid var(--gray-100);
+            border-radius: 12px;
+            font-size: 1rem;
+            resize: vertical;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+        }
+
+        .validate-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .validate-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .validate-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results {
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .issue-category {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border-radius: 12px;
+            background: var(--gray-100);
+        }
+
+        .issue-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .issue-detail {
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            background: var(--white);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .success-message {
+            padding: 1rem;
+            background: var(--success-color);
+            color: var(--white);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .loading i {
+            color: var(--primary-color);
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <i class="fas fa-check-circle"></i>
+            Script Validation Tool
+        </h1>
+        <p class="description">Check your script for grammar, structure, and inappropriate content</p>
+
+        <textarea
+            id="scriptInput"
+            placeholder="Paste your script here..."
+            rows="8"
+        ></textarea>
+
+        <button class="validate-btn" onclick="validateScript()">
+            <i class="fas fa-spell-check"></i>
+            Validate Script
+        </button>
+
+        <div class="loading">
+            <i class="fas fa-spinner"></i>
+        </div>
+
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        async function validateScript() {
+            const scriptInput = document.getElementById('scriptInput');
+            const loading = document.querySelector('.loading');
+            const results = document.getElementById('results');
+            const validateBtn = document.querySelector('.validate-btn');
+
+            const script = scriptInput.value.trim();
+            if (!script) {
+                alert('Please enter a script');
+                return;
+            }
+
+            // Show loading, disable button
+            loading.style.display = 'block';
+            validateBtn.disabled = true;
+            results.classList.remove('show');
+
+            try {
+                const response = await fetch('/validate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ script })
+                });
+
+                const data = await response.json();
+
+                results.innerHTML = '';
+
+                if (data.hasIssues) {
+                    data.issues.forEach(issue => {
+                        const issueElement = document.createElement('div');
+                        issueElement.className = 'issue-category';
+
+                        const header = document.createElement('div');
+                        header.className = 'issue-header';
+
+                        let icon = 'exclamation-circle';
+                        if (issue.category === 'Grammar & Spelling') icon = 'spell-check';
+                        else if (issue.category === 'Structure') icon = 'ruler';
+                        else if (issue.category === 'Inappropriate Content') icon = 'exclamation-triangle';
+
+                        header.innerHTML = `<i class="fas fa-${icon}"></i> ${issue.category}`;
+
+                        if (issue.count) header.innerHTML += ` (${issue.count} issues)`;
+
+                        issueElement.appendChild(header);
+
+                        const details = Array.isArray(issue.details) ? issue.details :
+                                      issue.details.map(detail => detail.message || detail);
+
+                        details.forEach(detail => {
+                            const detailElement = document.createElement('div');
+                            detailElement.className = 'issue-detail';
+                            detailElement.textContent = detail;
+                            issueElement.appendChild(detailElement);
+                        });
+
+                        results.appendChild(issueElement);
+                    });
+                } else {
+                    results.innerHTML = `
+                        <div class="success-message">
+                            <i class="fas fa-check-circle"></i>
+                            Your script looks good! No issues found.
+                        </div>
+                    `;
+                }
+
+                results.classList.add('show');
+            } catch (error) {
+                alert('Error: ' + error);
+            } finally {
+                loading.style.display = 'none';
+                validateBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

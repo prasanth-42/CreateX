@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Summary</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
+  </head>
+  <body>
+    <header>
+      <h1 class="animate__animated animate__fadeInDown">Video Summary</h1>
+    </header>
+    <main>
+      <div class="container animate__animated animate__fadeInUp">
+
+        <div id="summary-container">
+          <p>{{ summary }}</p>
+        </div>
+      </div>
+    </main>
+    <footer>
+      <p>&copy; 2023 YouTube Video Summarizer Made with ❤️ in India</p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #8b5cf6 0%, #ffffff 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            max-width: 800px;
+            padding: 2rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .form-control {
+            border-radius: 15px;
+            border: 2px solid #8b5cf6;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(139, 92, 246, 0.25);
+            border-color: #8b5cf6;
+        }
+
+        .btn-primary {
+            background-color: #8b5cf6;
+            border: none;
+            border-radius: 15px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #7c3aed;
+            transform: scale(1.05);
+        }
+
+        .btn-download {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-download:hover {
+            background-color: #059669;
+            transform: scale(1.05);
+        }
+
+        .generated-image {
+            max-width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading-spinner {
+            width: 3rem;
+            height: 3rem;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #8b5cf6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: #ef4444;
+            background: #fee2e2;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .card {
+                margin: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card p-4 mt-5">
+            <h1 class="text-center mb-4" style="color: #8b5cf6;">AI Image Generator</h1>
+
+            <form id="generateForm" class="mb-4">
+                <div class="mb-3">
+                    <textarea
+                        class="form-control"
+                        id="prompt"
+                        rows="4"
+                        placeholder="Enter your image description here..."
+                        required></textarea>
+                </div>
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary">
+                        Generate Image
+                    </button>
+                </div>
+            </form>
+
+            <div id="loadingSpinner" class="loading-spinner d-none"></div>
+            <div id="errorMessage" class="error-message d-none"></div>
+
+            <div id="imageContainer" class="text-center mt-4 d-none">
+                <img id="generatedImage" class="generated-image mb-3" alt="Generated image">
+                <div>
+                    <form id="downloadForm">
+                        <input type="hidden" id="imageUrl" name="image_url">
+                        <button type="submit" class="btn btn-download">
+                            Download Image
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('generateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const prompt = document.getElementById('prompt').value;
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const imageContainer = document.getElementById('imageContainer');
+            const errorMessage = document.getElementById('errorMessage');
+
+            loadingSpinner.classList.remove('d-none');
+            imageContainer.classList.add('d-none');
+            errorMessage.classList.add('d-none');
+
+            try {
+                const response = await fetch('/ttt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `prompt=${encodeURIComponent(prompt)}`
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const generatedImage = document.getElementById('generatedImage');
+                    const imageUrl = document.getElementById('imageUrl');
+
+                    generatedImage.src = data.image_url;
+                    imageUrl.value = data.image_url;
+                    imageContainer.classList.remove('d-none');
+                } else {
+                    throw new Error(data.error || 'Failed to generate image');
+                }
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                errorMessage.classList.remove('d-none');
+            } finally {
+                loadingSpinner.classList.add('d-none');
+            }
+        });
+
+        document.getElementById('downloadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const imageUrl = document.getElementById('imageUrl').value;
+
+            try {
+                const response = await fetch('/img', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `image_url=${encodeURIComponent(imageUrl)}`
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'generated_image.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+                } else {
+                    throw new Error('Failed to download image');
+                }
+            } catch (error) {
+                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.textContent = error.message;
+                errorMessage.classList.remove('d-none');
+            }
+        });
+    </script>
+</body>
+</html>
